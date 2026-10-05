@@ -1,0 +1,121 @@
+========================================================================
+  SENIORCARE (SCS) — HOW TO RUN THE PROJECT (MONGODB COMPASS)
+========================================================================
+
+1. PREREQUISITES
+------------------------------------------------------------------------
+* Node.js v18 or higher (Recommended: Node 20+)
+* MongoDB installed and running locally on port 27017
+  (MongoDB Community Server or MongoDB Atlas)
+* MongoDB Compass (GUI to view database and collections)
+
+------------------------------------------------------------------------
+2. MONGODB COMPASS CONNECTION
+------------------------------------------------------------------------
+Open MongoDB Compass:
+1. Under "New Connection", enter connection URI:
+   mongodb://127.0.0.1:27017
+2. Click "Connect".
+3. Database Name: senior_care
+4. You will see all 14 collections:
+   - users
+   - seniors
+   - caregivers
+   - familymembers
+   - volunteers
+   - checkins
+   - emergencies
+   - appointments
+   - assistancerequests
+   - fees
+   - payments
+   - notifications
+   - notificationpreferences
+   - recentlyaccesseds
+   - auditlogs
+
+------------------------------------------------------------------------
+3. SETUP AND SEED DATABASE
+------------------------------------------------------------------------
+Open a terminal in the project root:
+
+cd backend
+npm install
+npm run seed
+
+This command will:
+* Connect to MongoDB Compass at mongodb://127.0.0.1:27017
+* Seed all 6 role accounts, 5 senior profiles, check-ins, active emergencies,
+  appointments, assistance requests, fees, and payments.
+* Automatically generate sample_data.xlsx in the root directory!
+
+------------------------------------------------------------------------
+4. START THE BACKEND SERVER
+------------------------------------------------------------------------
+In the backend folder:
+
+npm start
+
+* Backend URL: http://localhost:5000
+* Realtime: Socket.IO enabled on port 5000
+
+------------------------------------------------------------------------
+5. START THE FRONTEND (REACT + VITE)
+------------------------------------------------------------------------
+Open a second terminal window in the frontend folder:
+
+cd frontend
+npm install
+npm run dev
+
+* Frontend URL: http://localhost:5174
+
+------------------------------------------------------------------------
+6. QUICK ONE-CLICK DEMO LOGINS (TESTING & PRESENTATION)
+------------------------------------------------------------------------
+On the login page (http://localhost:5174), you can click any of the
+6 "Quick Demo Login" buttons to instantly log in:
+
+1. 🛡️ Admin:
+   Email: admin.test@seniorcare.local
+   Password: SeniorCare@2026!
+
+2. 👔 Staff:
+   Email: staff.test@seniorcare.local
+   Password: SeniorCare@2026!
+
+3. 👵 Senior Citizen:
+   Email: senior.test@seniorcare.local
+   Password: SeniorCare@2026!
+
+4. 👨‍👩‍👧 Family Member:
+   Email: family.test@seniorcare.local
+   Password: SeniorCare@2026!
+
+5. 👩‍⚕️ Caregiver / Caretaker:
+   Email: caretaker.test@seniorcare.local
+   Password: SeniorCare@2026!
+
+6. 🤝 Volunteer:
+   Email: volunteer.test@seniorcare.local
+   Password: SeniorCare@2026!
+
+------------------------------------------------------------------------
+7. KEY FEATURES TO DEMO IN PRESENTATION
+------------------------------------------------------------------------
+* "✓ I AM SAFE" Button: Instant daily check-in with celebratory confetti!
+* "🚨 EMERGENCY" Button: Generates EMG-XXXX alert with live audio-visual beacon,
+  broadcasts in real time via Socket.IO to Caregivers and Family.
+* Action Color / Theme Customization: Instant accent color selector in Navbar & Settings
+  (Ocean Teal, Sapphire Blue, Forest Emerald, Royal Purple, Crimson Rose, Sunset Amber).
+* Postcard Cards & Popups: Touch/click any dashboard card or row (Senior, Emergency,
+  Appointment, Assistance, Fee) to pop up an interactive vintage-modern Postcard!
+* Notification Center Postcard: Click/touch any notification to view detailed postcard,
+  status breakdown (Emergency, Safety, Appointments, Fees), and direct action links.
+* Bilingual Switching: Instant one-click toggle between English and தமிழ் (Tamil).
+* Floating Chatbot: Interactive bot at bottom right with smart Q&A in English & Tamil,
+  quick reply chips, and direct action triggers (Emergency, Check-in, Appointments, Fees).
+* Recharts Analytics: Admin dashboard features interactive area and line charts.
+* Excel Import/Export: View reports, export to Excel, and import sample_data.xlsx.
+* MongoDB Compass: Database 'senior_care' stores all collections with live updates.
+========================================================================

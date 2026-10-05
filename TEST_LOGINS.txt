@@ -1,0 +1,57 @@
+========================================================================
+  SENIORCARE (SCS) — TEST LOGIN CREDENTIALS
+========================================================================
+
+Common Password for all demo accounts:
+SeniorCare@2026!
+
+------------------------------------------------------------------------
+1. System Administrator
+------------------------------------------------------------------------
+Role: admin
+Email: admin.test@seniorcare.local
+Password: SeniorCare@2026!
+Features: Full system dashboard, Recharts operations analytics, user management, audit logs, reports export & import.
+
+------------------------------------------------------------------------
+2. Care Staff
+------------------------------------------------------------------------
+Role: staff
+Email: staff.test@seniorcare.local
+Password: SeniorCare@2026!
+Features: Senior resident registry, appointment scheduling, fee recording, check-in compliance monitoring, reports.
+
+------------------------------------------------------------------------
+3. Senior Citizen
+------------------------------------------------------------------------
+Role: senior_citizen
+Email: senior.test@seniorcare.local
+Password: SeniorCare@2026!
+Features: Large accessible UI, "✓ I AM SAFE" check-in button, "🚨 EMERGENCY" quick trigger, My Caregiver card with direct call, My Appointments, My Fees, My Family.
+
+------------------------------------------------------------------------
+4. Family Member
+------------------------------------------------------------------------
+Role: family_member
+Email: family.test@seniorcare.local
+Password: SeniorCare@2026!
+Features: Linked senior resident status, real-time safety streak, live emergency alerts, primary caregiver phone, pending care fees payment.
+
+------------------------------------------------------------------------
+5. Primary Caregiver / Caretaker
+------------------------------------------------------------------------
+Role: caretaker / caregiver
+Email: caretaker.test@seniorcare.local
+Password: SeniorCare@2026!
+Features: Assigned seniors monitoring, missed check-ins queue, active emergency response panel (Acknowledge, Escalate, Resolve), care notes.
+
+------------------------------------------------------------------------
+6. Care Volunteer
+------------------------------------------------------------------------
+Role: volunteer
+Email: volunteer.test@seniorcare.local
+Password: SeniorCare@2026!
+Features: Available assistance requests board (Medicine Pickup, Food Delivery, Grocery Shopping, Hospital Escort), Accept Task, Mark Completed.
+
+* TIP: On the login page, you can also click the quick demo buttons to log in with 1 click!
+========================================================================

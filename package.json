@@ -1,0 +1,22 @@
+{
+  "name": "seniorcare-react-complete",
+  "version": "1.0.0",
+  "description": "SeniorCare Management System (Full Stack)",
+  "type": "module",
+  "scripts": {
+    "start": "npm --prefix backend start",
+    "backend": "npm --prefix backend start",
+    "dev": "npm --prefix frontend run dev",
+    "frontend": "npm --prefix frontend run dev",
+    "seed": "npm --prefix backend run seed",
+    "build": "npm --prefix frontend run build"
+  },
+  "keywords": [
+    "senior-care",
+    "react",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC"
+}
