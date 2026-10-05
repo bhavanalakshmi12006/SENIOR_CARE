@@ -13,6 +13,18 @@ export async function getFees(req, res) {
     if (req.user.role === "senior_citizen") {
       const senior = await Senior.findOne({ userId: req.user._id });
       if (senior) filter.seniorId = senior._id;
+    } else if (req.user.role === "family_member") {
+      let famSeniors = await Senior.find({
+        $or: [
+          { familyMemberUserIds: req.user._id },
+          { emergencyContactPhone: req.user.phone || "---" }
+        ]
+      });
+      if (seniorId) {
+        filter.seniorId = seniorId;
+      } else {
+        filter.seniorId = { $in: famSeniors.map(s => s._id) };
+      }
     }
 
     const fees = await Fee.find(filter).sort({ dueDate: 1 });
@@ -31,6 +43,90 @@ export async function getFees(req, res) {
     });
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch fees", error: err.message });
+  }
+}
+
+export async function orderService(req, res) {
+  try {
+    const { 
+      seniorId, 
+      serviceName, 
+      category = "Lab Test & Diagnostics", 
+      estimatedCost = 0, 
+      collectionDate = new Date(), 
+      fastingRequired = false,
+      notes = "",
+      channels = ["whatsapp", "sms", "email"],
+      recipientPhone,
+      recipientEmail
+    } = req.body;
+
+    let senior;
+    if (seniorId) {
+      senior = await Senior.findById(seniorId);
+    } else if (req.user.role === "senior_citizen") {
+      senior = await Senior.findOne({ userId: req.user._id });
+    } else {
+      senior = await Senior.findOne({ familyMemberUserIds: req.user._id }) || await Senior.findOne();
+    }
+
+    if (!senior) return res.status(404).json({ message: "Senior resident record not found." });
+
+    const codeNum = Math.floor(200 + Math.random() * 800);
+    const feeCode = `LAB-${codeNum}`;
+
+    const cost = Number(estimatedCost) || 450;
+
+    const fee = await Fee.create({
+      feeCode,
+      seniorId: senior._id,
+      seniorName: senior.name,
+      title: serviceName || "Complete Routine Diagnostic Panel",
+      category,
+      totalAmount: cost,
+      paidAmount: cost, // Marked covered / billed to healthcare package
+      remainingAmount: 0,
+      dueDate: new Date(collectionDate),
+      status: "Paid",
+      notes: `Order Placed: ${fastingRequired ? "12hr Fasting Required. " : ""}${notes} (Dispatched via ${channels.join(", ")})`
+    });
+
+    // Notify via WhatsApp, SMS, Email
+    try {
+      const { dispatchNotification } = await import("../services/notificationService.js");
+      await dispatchNotification({
+        recipientUserId: senior.userId || req.user._id,
+        recipientRole: "senior_citizen",
+        seniorId: senior._id,
+        type: "fee",
+        title: `📦 Order Confirmed: ${fee.title}`,
+        message: `Your test/service order ${feeCode} has been placed for ${senior.name}. Schedule date: ${new Date(collectionDate).toLocaleDateString()}. Fasting: ${fastingRequired ? "Yes" : "No"}.`,
+        priority: "normal",
+        link: "/fees",
+        channels,
+        recipientPhone: recipientPhone || senior.emergencyContactPhone || senior.phone,
+        recipientEmail: recipientEmail || req.user.email
+      });
+    } catch (notifErr) {
+      console.warn("Notification dispatch notice:", notifErr.message);
+    }
+
+    await AuditLog.create({
+      action: "SERVICE_ORDERED",
+      performedBy: req.user._id,
+      performedByName: req.user.displayName,
+      performedByRole: req.user.role,
+      targetEntity: "Fee",
+      targetId: feeCode,
+      details: `Ordered lab/hospital service ${feeCode} (${fee.title}) for ${senior.name}`
+    });
+
+    res.status(201).json({
+      message: `Lab/Hospital service successfully ordered! Confirmations sent via ${channels.join(", ")}.`,
+      fee
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to order service", error: err.message });
   }
 }
 

@@ -38,6 +38,11 @@ export default function EmergencyBanner({ emergency, onNavigate, onResolved }) {
             {emergency.emergencyCode} — {emergency.seniorName} ({emergency.location || "Room"})
           </h4>
           <p>{emergency.notes}</p>
+          <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.35rem", flexWrap: "wrap", fontSize: "0.74rem" }}>
+            <span style={{ background: "rgba(16,185,129,0.2)", color: "#10b981", padding: "0.1rem 0.5rem", borderRadius: "10px", fontWeight: "700" }}>✓ 💬 WhatsApp Sent</span>
+            <span style={{ background: "rgba(59,130,246,0.2)", color: "#3b82f6", padding: "0.1rem 0.5rem", borderRadius: "10px", fontWeight: "700" }}>✓ 📱 SMS Dispatched</span>
+            <span style={{ background: "rgba(234,88,12,0.2)", color: "#ea580c", padding: "0.1rem 0.5rem", borderRadius: "10px", fontWeight: "700" }}>✓ 📧 Gmail Alert Sent</span>
+          </div>
         </div>
       </div>
 

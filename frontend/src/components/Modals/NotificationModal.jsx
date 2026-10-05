@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { 
   Bell, X, ShieldAlert, CheckCircle2, Calendar, CreditCard, 
-  HandHeart, Trash2, Check, ExternalLink, Sparkles, AlertCircle 
+  HandHeart, Trash2, Check, ExternalLink, Sparkles, AlertCircle,
+  Send, MessageCircle, Mail, Phone
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
+import api from "../../api";
 
 export default function NotificationModal({ 
   isOpen, 
@@ -16,9 +19,61 @@ export default function NotificationModal({
   onDeleteNotification,
   onNavigate 
 }) {
-  const { lang, t } = useAuth();
+  const { lang, t, user } = useAuth();
+  const { showToast } = useToast();
+  const [dispatchingChannel, setDispatchingChannel] = useState(null);
 
   if (!isOpen) return null;
+
+  const handleForwardAlert = async (n, channel) => {
+    if (!n) return;
+    setDispatchingChannel(channel);
+    try {
+      await api.post("/notifications/dispatch", {
+        title: n.title,
+        message: n.message,
+        channels: [channel],
+        type: n.type,
+        priority: n.priority,
+        seniorId: n.seniorId
+      });
+      showToast(
+        lang === "ta"
+          ? `${channel.toUpperCase()} வழியாக அறிவிப்பு வெற்றிகரமாக அனுப்பப்பட்டது!`
+          : `Alert successfully dispatched via ${channel.toUpperCase()}!`,
+        "success"
+      );
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to dispatch", "error");
+    } finally {
+      setDispatchingChannel(null);
+    }
+  };
+
+  const handleForwardAll = async (n) => {
+    if (!n) return;
+    setDispatchingChannel("all");
+    try {
+      await api.post("/notifications/dispatch", {
+        title: n.title,
+        message: n.message,
+        channels: ["whatsapp", "sms", "email"],
+        type: n.type,
+        priority: n.priority,
+        seniorId: n.seniorId
+      });
+      showToast(
+        lang === "ta"
+          ? "WhatsApp, SMS மற்றும் Email ஆகிய மூன்றிலும் எச்சரிக்கை அனுப்பப்பட்டது!"
+          : "Dispatched simultaneously to WhatsApp, SMS & Google Email!",
+        "success"
+      );
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to dispatch", "error");
+    } finally {
+      setDispatchingChannel(null);
+    }
+  };
 
   // Breakdown counts by type
   const counts = {
@@ -152,7 +207,51 @@ export default function NotificationModal({
                     </span>
                   </div>
 
-                  <div className="active-notif-actions">
+                  {/* Instant Multi-Channel Dispatch Bar (WhatsApp, SMS, Google Mail) */}
+                  <div className="notif-forward-channels-bar" style={{ marginTop: "0.85rem", padding: "0.75rem", background: "var(--surface-hover)", borderRadius: "10px", border: "1px solid var(--border)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                      <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                        <Send size={13} className="text-primary" />
+                        {lang === "ta" ? "நேரலை அறிவிப்பு அனுப்பு:" : "Direct Alert Dispatch:"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleForwardAll(activeNotif)}
+                        disabled={dispatchingChannel !== null}
+                        style={{ fontSize: "0.72rem", background: "var(--primary)", color: "#fff", border: "none", padding: "0.2rem 0.55rem", borderRadius: "6px", cursor: "pointer", fontWeight: 600 }}
+                      >
+                        {dispatchingChannel === "all" ? "..." : (lang === "ta" ? "அனைத்திலும் அனுப்பு (All 3)" : "Send to All (WA/SMS/Mail)")}
+                      </button>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.4rem" }}>
+                      <button
+                        type="button"
+                        onClick={() => handleForwardAlert(activeNotif, "whatsapp")}
+                        disabled={dispatchingChannel !== null}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem", padding: "0.4rem", background: "rgba(16,185,129,0.12)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)", borderRadius: "7px", fontSize: "0.76rem", fontWeight: 700, cursor: "pointer" }}
+                      >
+                        <span>📱</span> WhatsApp
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleForwardAlert(activeNotif, "sms")}
+                        disabled={dispatchingChannel !== null}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem", padding: "0.4rem", background: "rgba(37,99,235,0.12)", color: "#2563eb", border: "1px solid rgba(37,99,235,0.3)", borderRadius: "7px", fontSize: "0.76rem", fontWeight: 700, cursor: "pointer" }}
+                      >
+                        <span>💬</span> SMS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleForwardAlert(activeNotif, "email")}
+                        disabled={dispatchingChannel !== null}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem", padding: "0.4rem", background: "rgba(234,67,53,0.12)", color: "#ea4335", border: "1px solid rgba(234,67,53,0.3)", borderRadius: "7px", fontSize: "0.76rem", fontWeight: 700, cursor: "pointer" }}
+                      >
+                        <span>📧</span> Email
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="active-notif-actions" style={{ marginTop: "0.85rem" }}>
                     <button 
                       className="btn-postcard-action primary"
                       onClick={() => handleActionClick(activeNotif)}

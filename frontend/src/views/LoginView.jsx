@@ -1,70 +1,155 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   HeartHandshake, LogIn, UserPlus, Shield, User, Heart, 
-  HelpCircle, Sparkles, AlertCircle, CheckCircle2, Lock, Mail, 
-  Palette, UserCheck, Settings as SettingsIcon 
+  Sparkles, AlertCircle, CheckCircle2, Lock, Mail, 
+  Palette, UserCheck, ChevronLeft, ChevronRight, Quote,
+  Phone, Eye, Camera, ShieldCheck
 } from "lucide-react";
-import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import ThemeAppearanceModal from "../components/Modals/ThemeAppearanceModal";
 import GoogleAuthSection from "../components/GoogleAuthSection";
+import api from "../api";
 
 export default function LoginView({ onSwitchToRegister }) {
   const { 
-    login, quickDemoLogin, 
+    login, 
     lang, setLang, theme, setTheme, 
     actionColor, t 
   } = useAuth();
   const { showToast } = useToast();
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
+  const [password, setPassword] = useState("SeniorCare2026");
+  const [selectedRole, setSelectedRole] = useState("senior_citizen");
   const [themeModalOpen, setThemeModalOpen] = useState(false);
+  const [activeQuoteIndex, setActiveQuoteIndex] = useState(0);
+
+  const [seniorsDirectory, setSeniorsDirectory] = useState([]);
+  const [selectedSeniorId, setSelectedSeniorId] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const quotes = [
+    {
+      en: "“To care for those who once cared for us is one of the highest honors.”",
+      ta: "“நமக்காக வாழ்ந்த பெரியோர்களை இன்று பாசத்தோடு கவனித்துக் கொள்வதே மனிதத்தின் மிக உயர்ந்த பெருமை.”",
+      author: "Tea Obreht",
+      tag: lang === "ta" ? "அன்பும் அரவணைப்பும்" : "Compassion & Honor"
+    },
+    {
+      en: "“The heart that loves never grows old. Every senior deserves safety, gentle warmth, and dignity.”",
+      ta: "“அன்பு நிறைந்த உள்ளத்திற்கு ஒருபோதும் முதுமை இல்லை. ஒவ்வொரு முதியவரும் பாதுகாப்பையும் கனிவான மரியாதையையும் பெற வேண்டும்.”",
+      author: "Elder Wellness Pledge",
+      tag: lang === "ta" ? "பாதுகாப்பான வாழ்க்கை" : "Dignity & Care"
+    },
+    {
+      en: "“Compassion is the language which the deaf can hear and the blind can see.”",
+      ta: "“கனிவு என்பது காது கேளாதோராலும் கேட்க முடிகின்ற, பார்வையற்றோராலும் உணர முடிகின்ற பாசமொழி.”",
+      author: "Mark Twain",
+      tag: lang === "ta" ? "அர்ப்பணிப்பு சேவை" : "Universal Care"
+    },
+    {
+      en: "“Ageing is an extraordinary process where you become the person you always ought to have been.”",
+      ta: "“பெரியோர்களின் ஆசியும் புன்னகையுமே ஒரு குடும்பத்தின் உண்மையான பொக்கிஷம்.”",
+      author: "David Bowie",
+      tag: lang === "ta" ? "குடும்ப ஆசீர்வாதம்" : "Generational Bond"
+    }
+  ];
+
+  const galleryHighlights = [
+    {
+      id: 1,
+      title: lang === "ta" ? "காலை யோகா & தியானம்" : "Morning Garden Yoga",
+      subtitle: lang === "ta" ? "அமைதியான நல்வாழ்வு பயிற்சிகள்" : "Restorative Pranayama & Gentle Stretch",
+      img: "/assets/senior-yoga.jpg",
+      tag: "Yoga & Wellness"
+    },
+    {
+      id: 2,
+      title: lang === "ta" ? "பாரம்பரிய இசை & குடும்பம்" : "Music Therapy Moments",
+      subtitle: lang === "ta" ? "பாசமிகு குடும்ப சங்கமம்" : "Soulful Melodies & Generational Joy",
+      img: "/assets/senior-music.jpg",
+      tag: "Music Therapy"
+    },
+    {
+      id: 3,
+      title: lang === "ta" ? "24/7 அன்பான செவிலியர் பராமரிப்பு" : "Compassionate Nursing Care",
+      subtitle: lang === "ta" ? "நேரலை ஆரோக்கிய கண்காணிப்பு" : "24/7 Vitals & Dedicated Nurse Support",
+      img: "/assets/caregiver-senior.jpg",
+      tag: "Dedicated Care"
+    },
+    {
+      id: 4,
+      title: lang === "ta" ? "தலைமுறைகள் இணைந்த பாசம்" : "Family Reunions & Tea",
+      subtitle: lang === "ta" ? "பேரக்குழந்தைகளுடன் இனிய தருணம்" : "Heartwarming Connections with Loved Ones",
+      img: "/assets/family-care.jpg",
+      tag: "Family Bonds"
+    }
+  ];
+
+  // Auto rotate quotes every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveQuoteIndex((prev) => (prev + 1) % quotes.length);
+    }, 5500);
+    return () => clearInterval(timer);
+  }, [quotes.length]);
+
+  // Fetch seniors directory for family member senior selection
+  useEffect(() => {
+    api.get("/auth/seniors-directory")
+      .then((res) => {
+        const list = res.data.seniors || [];
+        setSeniorsDirectory(list);
+        if (list.length > 0 && !selectedSeniorId) {
+          setSelectedSeniorId(list[0]._id);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not fetch seniors directory:", err.message);
+      });
+  }, []);
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     setLoading(true);
-    const res = await login(email, password, role || undefined);
+    const res = await login(email, password, selectedRole, selectedSeniorId);
     setLoading(false);
     if (!res.success) {
       setErrorMsg(res.message);
       showToast(res.message, "error");
     } else {
-      showToast(lang === "ta" ? "வெற்றிகரமாக உள்நுழைந்தீர்கள்!" : "Signed in successfully!", "success");
-    }
-  };
-
-  const handleDemoLogin = async (demoRole) => {
-    setErrorMsg("");
-    setLoading(true);
-    const res = await quickDemoLogin(demoRole);
-    setLoading(false);
-    if (!res.success) {
-      setErrorMsg(res.message);
-      showToast(res.message, "error");
-    } else {
+      const chosenSenior = seniorsDirectory.find((s) => s._id === selectedSeniorId);
       showToast(
-        lang === "ta"
-          ? `${t[demoRole] || demoRole} கணக்கில் வெற்றிகரமாக உள்நுழைந்தீர்கள்!`
-          : `Signed in as ${t[demoRole] || demoRole}!`,
+        lang === "ta" 
+          ? `வெற்றிகரமாக உள்நுழைந்தீர்கள்! (${rolesList.find(r => r.id === selectedRole)?.label || selectedRole}${chosenSenior ? ` · ${chosenSenior.name}` : ""})` 
+          : `Signed in successfully as ${rolesList.find(r => r.id === selectedRole)?.label || selectedRole}${chosenSenior ? ` (${chosenSenior.name})` : ""}!`, 
         "success"
       );
     }
   };
+
+  const rolesList = [
+    { id: "senior_citizen", icon: "👵", label: lang === "ta" ? "மூத்த குடிமகன்" : "Senior Citizen", desc: "Personal care & safety" },
+    { id: "family_member", icon: "👨‍👩‍👧", label: lang === "ta" ? "குடும்பத்தினர்" : "Family Member", desc: "Monitor elder wellness" },
+    { id: "caregiver", icon: "👩‍⚕️", label: lang === "ta" ? "பராமரிப்பாளர்" : "Caregiver / Nurse", desc: "Resident care & check-ins" },
+    { id: "volunteer", icon: "🤝", label: lang === "ta" ? "தன்னார்வலர்" : "Volunteer", desc: "Errands & companion help" },
+    { id: "staff", icon: "👔", label: lang === "ta" ? "பணியாளர்" : "Staff", desc: "Center operations" },
+    { id: "admin", icon: "🛡️", label: lang === "ta" ? "நிர்வாகி" : "Admin", desc: "System & video moderation" }
+  ];
+
+  const currentQuote = quotes[activeQuoteIndex];
 
   return (
     <div className="auth-page-container">
       {/* Top Bar on Login Page */}
       <div className="auth-top-bar">
         <div className="brand-logo-inline">
-          <HeartHandshake size={24} className="text-primary" />
-          <span>SeniorCare (SCS)</span>
+          <HeartHandshake size={26} className="text-primary" />
+          <span style={{ fontWeight: 800, fontSize: "1.2rem", letterSpacing: "-0.5px" }}>SeniorCare (SCS)</span>
         </div>
 
         <div className="auth-top-controls">
@@ -93,45 +178,122 @@ export default function LoginView({ onSwitchToRegister }) {
       </div>
 
       <div className="auth-split-layout">
-        {/* Left Side: Hero Information */}
+        {/* Left Side: Fresh Gallery & Inspiring Quotes Showcase */}
         <div className="auth-hero-panel">
-          <span className="hero-eyebrow">SENIOR CITIZEN SAFETY & CARE SYSTEM</span>
-          <h1 className="hero-main-title">{t.tagline}</h1>
-          <p className="hero-sub-text">{t.subtitle}</p>
+          <span className="hero-eyebrow">
+            <ShieldCheck size={14} style={{ display: "inline", marginRight: "4px" }} />
+            SENIOR CITIZEN SAFETY & COMPREHENSIVE CARE SYSTEM
+          </span>
+          <h1 className="hero-main-title">
+            {lang === "ta" ? "முதியோரின் பாதுகாப்பு, நலம் மற்றும் கனிவான கவனிப்பு" : "Empowering Senior Wellness, Safety & Loving Companionship"}
+          </h1>
+          <p className="hero-sub-text">
+            {lang === "ta" 
+              ? "24/7 அவசர உதவி எச்சரிக்கைகள், தினசரி பாதுகாப்பு உறுதி, மருத்துவ ஆய்வக சேவைகள் மற்றும் இருமொழி AI உதவி."
+              : "Next-generation care coordination platform connecting elders, families, geriatric nurses, and trusted volunteers."}
+          </p>
 
-          <div className="auth-features-list">
-            <div className="hero-feature-item">
-              <span className="hero-icon-box">🚨</span>
-              <div>
-                <strong>{lang === "ta" ? "24/7 நேரலை அவசர உதவி" : "24/7 Real-Time Emergency Response"}</strong>
-                <p>{lang === "ta" ? "ஒரே கிளிக்கில் குடும்பத்தினர், பராமரிப்பாளர்கள் மற்றும் அவசர குழுவிற்கு எச்சரிக்கை." : "Instant alert broadcast to family, caregivers, and medical emergency teams."}</p>
+          {/* Inspiring Quote Carousel Card */}
+          <div className="quote-spotlight-card">
+            <div className="quote-spotlight-header">
+              <span className="quote-tag-pill">
+                <Quote size={13} style={{ transform: "rotate(180deg)" }} />
+                <span>{currentQuote.tag}</span>
+              </span>
+              <div className="quote-nav-arrows">
+                <button 
+                  type="button" 
+                  onClick={() => setActiveQuoteIndex((prev) => (prev - 1 + quotes.length) % quotes.length)}
+                  aria-label="Previous quote"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span style={{ fontSize: "0.75rem", opacity: 0.8 }}>{activeQuoteIndex + 1} / {quotes.length}</span>
+                <button 
+                  type="button" 
+                  onClick={() => setActiveQuoteIndex((prev) => (prev + 1) % quotes.length)}
+                  aria-label="Next quote"
+                >
+                  <ChevronRight size={16} />
+                </button>
               </div>
             </div>
 
-            <div className="hero-feature-item">
-              <span className="hero-icon-box">✓</span>
-              <div>
-                <strong>{lang === "ta" ? "தினசரி பாதுகாப்பு Check-in" : "Daily 'I AM SAFE' Safety Check-ins"}</strong>
-                <p>{lang === "ta" ? "மூத்த குடிமக்களின் நலம் மற்றும் உடல்நிலையை தினமும் எளிதாக பதிவு செய்தல்." : "Keep loved ones reassured with effortless one-tap daily wellness confirmations."}</p>
-              </div>
+            <p className="quote-text-quote">
+              {lang === "ta" ? currentQuote.ta : currentQuote.en}
+            </p>
+            <span className="quote-author-name">— {currentQuote.author}</span>
+          </div>
+
+          {/* Fresh Care Gallery Grid */}
+          <div className="landing-gallery-strip">
+            <div className="landing-gallery-header">
+              <span style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: "700", fontSize: "0.95rem" }}>
+                <Camera size={16} className="text-primary" />
+                <span>{lang === "ta" ? "📸 எங்கள் முதியோர் இல்ல நேரலை தருணங்கள்" : "📸 Life & Joy at SeniorCare"}</span>
+              </span>
+              <small style={{ color: "var(--text-muted)" }}>{lang === "ta" ? "நேரலை புகைப்படங்கள்" : "Real moments of care"}</small>
             </div>
 
-            <div className="hero-feature-item">
-              <span className="hero-icon-box">💬</span>
-              <div>
-                <strong>{lang === "ta" ? "இருமொழி AI உதவி Chatbot" : "Bilingual AI Care Assistant (EN/தமிழ்)"}</strong>
-                <p>{lang === "ta" ? "சந்திப்புகள், கட்டணங்கள், பராமரிப்பாளர் தகவல் அனைத்தையும் உடனே அறியலாம்." : "Smart assistance for upcoming visits, care fees, and caregiver contacts."}</p>
-              </div>
+            <div className="landing-gallery-grid">
+              {galleryHighlights.map((item) => (
+                <div key={item.id} className="landing-gallery-card">
+                  <div className="landing-gallery-thumb">
+                    <img src={item.img} alt={item.title} />
+                    <span className="gallery-mini-badge">{item.tag}</span>
+                  </div>
+                  <div className="landing-gallery-info">
+                    <strong>{item.title}</strong>
+                    <small>{item.subtitle}</small>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Right Side: Login Card & Role Switcher */}
+        {/* Right Side: Login Card with Role Selection & Google Auth */}
         <div className="auth-form-panel">
           <div className="auth-card-box">
             <div className="auth-card-header">
               <h2>{t.signIn}</h2>
-              <p>{lang === "ta" ? "உங்கள் கணக்கில் உள்நுழைந்து சேவைகளைப் பெறுங்கள்" : "Enter your credentials or choose a quick demo account"}</p>
+              <p>{lang === "ta" ? "உங்கள் பங்கைத் தேர்வு செய்து எளிதாக உள்நுழையுங்கள்" : "Choose your role and sign in with any email"}</p>
+            </div>
+
+            {/* Role Selection Tabs */}
+            <div className="role-selection-wrapper">
+              <label className="role-selection-label">
+                <UserCheck size={15} className="text-primary" />
+                <span>{lang === "ta" ? "உள்நுழைவதற்கான உங்கள் பங்கு (Role):" : "Choose Account Role to Sign In:"}</span>
+              </label>
+
+              <div className="role-chips-matrix">
+                {rolesList.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    className={`role-select-chip ${selectedRole === r.id ? "active" : ""}`}
+                    onClick={() => setSelectedRole(r.id)}
+                  >
+                    <span className="role-icon">{r.icon}</span>
+                    <span className="role-name">{r.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Standard Access Information Banner */}
+            <div className="universal-login-hint-banner">
+              <div className="hint-icon">🔑</div>
+              <div className="hint-body">
+                <strong>{lang === "ta" ? "எந்த மின்னஞ்சல் கொண்டும் உள்நுழையலாம்" : "Universal Email Access"}</strong>
+                <p>
+                  {lang === "ta" 
+                    ? "நிலையான கடவுச்சொல்: " 
+                    : "Standard access password: "}
+                  <code>SeniorCare2026</code>
+                </p>
+              </div>
             </div>
 
             {errorMsg && (
@@ -143,6 +305,58 @@ export default function LoginView({ onSwitchToRegister }) {
 
             {/* Email + Password Form */}
             <form onSubmit={handleEmailLogin} className="auth-form">
+              {/* Senior Citizen Selection for Family Member and Senior Citizen roles */}
+              {(selectedRole === "family_member" || selectedRole === "senior_citizen") && (
+                <div style={{
+                  background: "rgba(14, 165, 233, 0.08)",
+                  border: "1.5px solid #0284c7",
+                  borderRadius: "12px",
+                  padding: "0.85rem",
+                  marginBottom: "1rem"
+                }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: "700", fontSize: "0.86rem", color: "#0369a1", marginBottom: "0.45rem" }}>
+                    <span>{selectedRole === "family_member" ? "👨‍👩‍👧" : "👵"}</span>
+                    <span>
+                      {selectedRole === "family_member"
+                        ? (lang === "ta" ? "உங்கள் முதியவரை தேர்ந்தெடுக்கவும் (Choose Senior) *" : "Select Associated Elder (Senior Citizen) *")
+                        : (lang === "ta" ? "உங்கள் சுயவிவரத்தை தேர்ந்தெடுக்கவும் *" : "Select Your Senior Profile *")}
+                    </span>
+                  </label>
+
+                  <select
+                    value={selectedSeniorId}
+                    onChange={(e) => setSelectedSeniorId(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "0.6rem 0.8rem",
+                      borderRadius: "8px",
+                      border: "1px solid #0284c7",
+                      background: "var(--bg-surface, #ffffff)",
+                      color: "var(--text-main, #0f172a)",
+                      fontSize: "0.88rem",
+                      fontWeight: "600"
+                    }}
+                  >
+                    {seniorsDirectory.map((s) => (
+                      <option key={s._id} value={s._id}>
+                        {s.name} ({s.age} yrs · Room {s.roomNumber || "104"})
+                      </option>
+                    ))}
+                  </select>
+
+                  {selectedSeniorId && (
+                    <div style={{ marginTop: "0.45rem", fontSize: "0.78rem", color: "#0369a1", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                      <span>✓</span>
+                      <span>
+                        {lang === "ta" 
+                          ? `நீங்கள் ${seniorsDirectory.find(s => s._id === selectedSeniorId)?.name || "முதியவரை"} நிர்வகிக்க உள்நுழைகிறீர்கள்.`
+                          : `Monitoring health vitals, lab orders & assistance for: ${seniorsDirectory.find(s => s._id === selectedSeniorId)?.name || "Selected Elder"}.`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="form-group">
                 <label>{t.emailAddress}</label>
                 <div className="input-with-icon">
@@ -150,7 +364,7 @@ export default function LoginView({ onSwitchToRegister }) {
                   <input
                     type="email"
                     required
-                    placeholder="senior.test@seniorcare.local"
+                    placeholder="name@example.com (or test email)"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -164,7 +378,7 @@ export default function LoginView({ onSwitchToRegister }) {
                   <input
                     type="password"
                     required
-                    placeholder="••••••••"
+                    placeholder="SeniorCare2026"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
@@ -173,77 +387,29 @@ export default function LoginView({ onSwitchToRegister }) {
 
               <button type="submit" className="btn-auth-submit" disabled={loading}>
                 <LogIn size={18} />
-                {loading ? t.loading : t.signIn}
+                <span>
+                  {loading 
+                    ? t.loading 
+                    : (lang === "ta" 
+                        ? `${rolesList.find(r => r.id === selectedRole)?.label || ""} ஆக உள்நுழைக` 
+                        : `Sign In as ${rolesList.find(r => r.id === selectedRole)?.label || "Member"}`)}
+                </span>
               </button>
             </form>
 
-            {/* Google OAuth Section */}
+            {/* Google OAuth Section synchronized with selectedRole */}
             <div className="oauth-divider">
               <span>{lang === "ta" ? "அல்லது Google மூலம் தொடரவும்" : "OR CONTINUE WITH GOOGLE"}</span>
             </div>
 
-            <GoogleAuthSection defaultRole="senior_citizen" />
-
-            {/* Pre-Seeded Local Accounts for Testing */}
-            <div className="demo-accounts-section">
-              <div className="demo-header-label">
-                <Sparkles size={16} className="text-warning" />
-                <strong>{lang === "ta" ? "உள்ளூர் சோதனை கணக்குகள் (Local Seed Logins)" : "Pre-Seeded Test Accounts (Local)"}</strong>
-              </div>
-              <div className="demo-buttons-grid">
-                <button
-                  type="button"
-                  className="demo-role-btn admin"
-                  onClick={() => handleDemoLogin("admin")}
-                  disabled={loading}
-                >
-                  🛡️ {t.demoAdmin}
-                </button>
-                <button
-                  type="button"
-                  className="demo-role-btn staff"
-                  onClick={() => handleDemoLogin("staff")}
-                  disabled={loading}
-                >
-                  👔 {t.demoStaff}
-                </button>
-                <button
-                  type="button"
-                  className="demo-role-btn senior"
-                  onClick={() => handleDemoLogin("senior_citizen")}
-                  disabled={loading}
-                >
-                  👵 {t.demoSenior}
-                </button>
-                <button
-                  type="button"
-                  className="demo-role-btn family"
-                  onClick={() => handleDemoLogin("family_member")}
-                  disabled={loading}
-                >
-                  👨‍👩‍👧 {t.demoFamily}
-                </button>
-                <button
-                  type="button"
-                  className="demo-role-btn caregiver"
-                  onClick={() => handleDemoLogin("caregiver")}
-                  disabled={loading}
-                >
-                  👩‍⚕️ {t.demoCaregiver}
-                </button>
-                <button
-                  type="button"
-                  className="demo-role-btn volunteer"
-                  onClick={() => handleDemoLogin("volunteer")}
-                  disabled={loading}
-                >
-                  🤝 {t.demoVolunteer}
-                </button>
-              </div>
-            </div>
+            <GoogleAuthSection 
+              selectedRole={selectedRole} 
+              onRoleChange={(r) => setSelectedRole(r)}
+              hideRoleSelector={true}
+            />
 
             <div className="auth-card-footer">
-              <span>{lang === "ta" ? "புதியவரா?" : "Don't have an account?"}</span>
+              <span>{lang === "ta" ? "புதியவரா? கணக்கு உருவாக்க வேண்டுமா?" : "New user? Want to register?"}</span>
               <button type="button" className="btn-link" onClick={onSwitchToRegister}>
                 {t.signUp}
               </button>
@@ -252,7 +418,7 @@ export default function LoginView({ onSwitchToRegister }) {
         </div>
       </div>
 
-      {/* Full Theme & Custom Word/Letter Colors Modal */}
+      {/* Theme Appearance Customizer Modal */}
       <ThemeAppearanceModal 
         isOpen={themeModalOpen} 
         onClose={() => setThemeModalOpen(false)} 

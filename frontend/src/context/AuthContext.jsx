@@ -118,11 +118,27 @@ export function AuthProvider({ children }) {
   const token = session?.token || null;
   const t = translations[lang] || translations.en;
 
+  const [activeSeniorId, setActiveSeniorIdState] = useState(() => {
+    return localStorage.getItem("seniorcare_active_senior_id") || "";
+  });
+
+  const setActiveSeniorId = (id) => {
+    setActiveSeniorIdState(id || "");
+    if (id) {
+      localStorage.setItem("seniorcare_active_senior_id", id);
+    } else {
+      localStorage.removeItem("seniorcare_active_senior_id");
+    }
+  };
+
   const saveAuthSession = (data) => {
     const newSession = { token: data.token, user: data.user };
     localStorage.setItem("seniorcare_session", JSON.stringify(newSession));
     setSession(newSession);
 
+    if (data.user?.selectedSeniorId) {
+      setActiveSeniorId(data.user.selectedSeniorId);
+    }
     if (data.user?.preferredLanguage) {
       setLang(data.user.preferredLanguage);
     }
@@ -131,11 +147,14 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const login = async (email, password, role) => {
+  const login = async (email, password, role, seniorId) => {
     setLoading(true);
     try {
-      const res = await api.post("/auth/login", { email, password, role });
+      const res = await api.post("/auth/login", { email, password, role, seniorId });
       saveAuthSession(res.data);
+      if (seniorId) {
+        setActiveSeniorId(seniorId);
+      }
       return { success: true };
     } catch (err) {
       return {
@@ -213,6 +232,8 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem("seniorcare_session");
+    localStorage.removeItem("seniorcare_active_senior_id");
+    setActiveSeniorIdState("");
     setSession(null);
   };
 
@@ -234,6 +255,8 @@ export function AuthProvider({ children }) {
         googleClientId,
         saveGoogleClientId,
         resetAppearance,
+        activeSeniorId,
+        setActiveSeniorId,
         t,
         login,
         register,

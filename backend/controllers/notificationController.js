@@ -1,5 +1,6 @@
 import Notification from "../models/Notification.js";
 import NotificationPreference from "../models/NotificationPreference.js";
+import { dispatchNotification } from "../services/notificationService.js";
 
 export async function getNotifications(req, res) {
   try {
@@ -18,6 +19,50 @@ export async function getNotifications(req, res) {
     res.json({ notifications, unreadCount });
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch notifications", error: err.message });
+  }
+}
+
+export async function dispatchCustomNotification(req, res) {
+  try {
+    const { 
+      title, 
+      message, 
+      channels = ["whatsapp", "sms", "email"], 
+      recipientPhone, 
+      recipientEmail, 
+      seniorId, 
+      type = "system",
+      priority = "normal" 
+    } = req.body;
+
+    if (!title || !message) {
+      return res.status(400).json({ message: "Title and message are required" });
+    }
+
+    const notification = await dispatchNotification({
+      recipientUserId: req.user._id,
+      recipientRole: req.user.role,
+      seniorId,
+      type,
+      title,
+      message,
+      priority,
+      channels,
+      recipientPhone: recipientPhone || req.user.phone,
+      recipientEmail: recipientEmail || req.user.email
+    });
+
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("notification-created", { type, notification });
+    }
+
+    res.status(201).json({
+      message: `Notification successfully dispatched via ${channels.join(", ")}`,
+      notification
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to dispatch notification", error: err.message });
   }
 }
 
@@ -84,3 +129,4 @@ export async function updatePreferences(req, res) {
     res.status(500).json({ message: "Failed to update notification preferences", error: err.message });
   }
 }
+

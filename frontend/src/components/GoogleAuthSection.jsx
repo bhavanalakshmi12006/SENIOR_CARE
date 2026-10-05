@@ -1,28 +1,32 @@
 import React, { useState } from "react";
-import { UserCheck, Settings as SettingsIcon, AlertCircle, CheckCircle2, X } from "lucide-react";
+import { UserCheck, AlertCircle } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 
-export default function GoogleAuthSection({ defaultRole = "senior_citizen", onRoleChange }) {
-  const { googleAuth, googleClientId, saveGoogleClientId, lang, t } = useAuth();
+export default function GoogleAuthSection({ 
+  selectedRole = "senior_citizen", 
+  onRoleChange, 
+  hideRoleSelector = false 
+}) {
+  const { googleAuth, googleClientId, lang } = useAuth();
   const { showToast } = useToast();
 
-  const [selectedRole, setSelectedRole] = useState(defaultRole);
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [inputClientId, setInputClientId] = useState(googleClientId || "");
+  const [internalRole, setInternalRole] = useState(selectedRole);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  const activeRole = selectedRole || internalRole;
+
   const handleRoleSelect = (roleId) => {
-    setSelectedRole(roleId);
+    setInternalRole(roleId);
     if (onRoleChange) onRoleChange(roleId);
   };
 
   const handleGoogleSuccess = async (response) => {
     setLoading(true);
     setErrorMsg("");
-    const res = await googleAuth(response.credential, selectedRole);
+    const res = await googleAuth(response.credential, activeRole);
     setLoading(false);
     if (!res.success) {
       setErrorMsg(res.message);
@@ -46,53 +50,36 @@ export default function GoogleAuthSection({ defaultRole = "senior_citizen", onRo
     showToast("Google sign-in failed", "error");
   };
 
-  const handleSaveClientId = (e) => {
-    e.preventDefault();
-    const cleanId = inputClientId.trim();
-    if (!cleanId) {
-      showToast(
-        lang === "ta" ? "Google Client ID உள்ளிடவும்" : "Please paste your Google Client ID",
-        "warning"
-      );
-      return;
-    }
-    saveGoogleClientId(cleanId);
-    setShowConfigModal(false);
-    showToast(
-      lang === "ta" ? "Google Client ID சேமிக்கப்பட்டது!" : "Google Client ID connected!",
-      "success"
-    );
-  };
-
   return (
     <div className="google-auth-container">
-      {/* Role Selection for Google */}
-      <div className="google-role-select-box">
-        <label className="google-role-label">
-          <UserCheck size={14} className="text-primary" />
-          <span>{lang === "ta" ? "Google கணக்கிற்கான உங்கள் பங்கு (Role):" : "Select Role for Google Account:"}</span>
-        </label>
-        <div className="google-role-buttons-grid">
-          {[
-            { id: "senior_citizen", icon: "👵", label: lang === "ta" ? "மூத்த குடிமகன்" : "Senior Citizen" },
-            { id: "family_member", icon: "👨‍👩‍👧", label: lang === "ta" ? "குடும்பத்தினர்" : "Family Member" },
-            { id: "caregiver", icon: "👩‍⚕️", label: lang === "ta" ? "பராமரிப்பாளர்" : "Caregiver" },
-            { id: "volunteer", icon: "🤝", label: lang === "ta" ? "தன்னார்வலர்" : "Volunteer" },
-            { id: "staff", icon: "👔", label: lang === "ta" ? "பணியாளர்" : "Staff" },
-            { id: "admin", icon: "🛡️", label: lang === "ta" ? "நிர்வாகி" : "Admin" }
-          ].map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              className={`google-role-btn-chip ${selectedRole === r.id ? "active" : ""}`}
-              onClick={() => handleRoleSelect(r.id)}
-            >
-              <span>{r.icon}</span>
-              <span>{r.label}</span>
-            </button>
-          ))}
+      {!hideRoleSelector && (
+        <div className="google-role-select-box">
+          <label className="google-role-label">
+            <UserCheck size={14} className="text-primary" />
+            <span>{lang === "ta" ? "Google கணக்கிற்கான உங்கள் பங்கு (Role):" : "Select Role for Google Account:"}</span>
+          </label>
+          <div className="google-role-buttons-grid">
+            {[
+              { id: "senior_citizen", icon: "👵", label: lang === "ta" ? "மூத்த குடிமகன்" : "Senior Citizen" },
+              { id: "family_member", icon: "👨‍👩‍👧", label: lang === "ta" ? "குடும்பத்தினர்" : "Family Member" },
+              { id: "caregiver", icon: "👩‍⚕️", label: lang === "ta" ? "பராமரிப்பாளர்" : "Caregiver" },
+              { id: "volunteer", icon: "🤝", label: lang === "ta" ? "தன்னார்வலர்" : "Volunteer" },
+              { id: "staff", icon: "👔", label: lang === "ta" ? "பணியாளர்" : "Staff" },
+              { id: "admin", icon: "🛡️", label: lang === "ta" ? "நிர்வாகி" : "Admin" }
+            ].map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                className={`google-role-btn-chip ${activeRole === r.id ? "active" : ""}`}
+                onClick={() => handleRoleSelect(r.id)}
+              >
+                <span>{r.icon}</span>
+                <span>{r.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {errorMsg && (
         <div className="auth-error-banner" style={{ margin: "10px 0" }}>
@@ -101,7 +88,6 @@ export default function GoogleAuthSection({ defaultRole = "senior_citizen", onRo
         </div>
       )}
 
-      {/* Prominent Continue with Google Button */}
       <div className="google-button-wrapper">
         {googleClientId ? (
           <div className="google-oauth-rendered-box">
@@ -116,24 +102,14 @@ export default function GoogleAuthSection({ defaultRole = "senior_citizen", onRo
                 width="100%"
               />
             </div>
-            <button
-              type="button"
-              className="btn-configure-google-link"
-              onClick={() => {
-                setInputClientId(googleClientId);
-                setShowConfigModal(true);
-              }}
-            >
-              ⚙️ {lang === "ta" ? "Google Client ID மாற்றம்" : "Change Google Client ID"}
-            </button>
           </div>
         ) : (
           <div className="google-oauth-rendered-box">
             <button
               type="button"
               className="btn-continue-with-google"
-              onClick={() => setShowConfigModal(true)}
-              title="Sign in with real Google Account"
+              onClick={handleGoogleError}
+              title="Continue with Google"
             >
               <svg className="google-logo-svg" viewBox="0 0 24 24" width="20" height="20">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -143,77 +119,9 @@ export default function GoogleAuthSection({ defaultRole = "senior_citizen", onRo
               </svg>
               <span>{lang === "ta" ? "Google மூலம் தொடரவும் (Continue with Google)" : "Continue with Google"}</span>
             </button>
-            <small className="google-hint-subtext">
-              {lang === "ta" 
-                ? "💡 உங்கள் .env ஃபைலில் VITE_GOOGLE_CLIENT_ID போடலாம் அல்லது மேலே உள்ள பட்டனை அழுத்தவும்"
-                : "💡 Set VITE_GOOGLE_CLIENT_ID in .env or click above to paste your Google Client ID"}
-            </small>
           </div>
         )}
       </div>
-
-      {/* Modal to paste Google Client ID */}
-      {showConfigModal && (
-        <div className="modal-backdrop-overlay" onClick={() => setShowConfigModal(false)}>
-          <div className="google-config-modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="google-modal-header">
-              <div className="google-modal-header-title">
-                <span className="google-modal-g-badge">G</span>
-                <div>
-                  <h4>{lang === "ta" ? "உண்மையான Google Authentication" : "Real Google Authentication Setup"}</h4>
-                  <small>{lang === "ta" ? "உங்கள் Google Cloud Console Web Client ID-ஐ இணைக்கவும்" : "Connect your Google Cloud OAuth Web Client ID"}</small>
-                </div>
-              </div>
-              <button 
-                type="button" 
-                className="google-modal-close-btn" 
-                onClick={() => setShowConfigModal(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveClientId} className="google-modal-form">
-              <div className="form-group">
-                <label>
-                  {lang === "ta" ? "Google OAuth Web Client ID:" : "Google OAuth Web Client ID:"}
-                </label>
-                <input
-                  type="text"
-                  autoFocus
-                  required
-                  placeholder="xxxxxx.apps.googleusercontent.com"
-                  value={inputClientId}
-                  onChange={(e) => setInputClientId(e.target.value)}
-                  className="google-modal-input"
-                />
-                <span className="input-helper-note">
-                  {lang === "ta" 
-                    ? "💡 குறிப்பு: இதை உங்கள் frontend/.env ஃபைலிலும் VITE_GOOGLE_CLIENT_ID-ஆக சேமிக்கலாம்."
-                    : "💡 Tip: You can also set this directly in frontend/.env as VITE_GOOGLE_CLIENT_ID."}
-                </span>
-              </div>
-
-              <div className="google-modal-footer">
-                <button
-                  type="button"
-                  className="btn-modal-cancel"
-                  onClick={() => setShowConfigModal(false)}
-                >
-                  {t.cancel || "Cancel"}
-                </button>
-                <button
-                  type="submit"
-                  className="btn-modal-save-google"
-                >
-                  <CheckCircle2 size={16} />
-                  <span>{lang === "ta" ? "இணைக்கவும் (Connect & Enable)" : "Connect & Enable"}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

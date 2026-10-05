@@ -7,13 +7,20 @@ const notificationSchema = new mongoose.Schema({
   seniorId: { type: mongoose.Schema.Types.ObjectId, ref: "Senior", default: null },
   type: { 
     type: String, 
-    enum: ["emergency", "checkin", "appointment", "assistance", "fee", "medication", "health", "system"], 
+    enum: ["emergency", "checkin", "appointment", "assistance", "fee", "medication", "health", "system", "complaint", "review"], 
     default: "system" 
   },
   title: { type: String, required: true },
   message: { type: String, required: true },
   priority: { type: String, enum: ["normal", "high", "critical"], default: "normal" },
   link: { type: String, default: "" },
+  channels: { type: [String], default: ["inApp"] },
+  channelStatus: {
+    inApp: { type: Boolean, default: true },
+    sms: { type: Boolean, default: false },
+    whatsapp: { type: Boolean, default: false },
+    email: { type: Boolean, default: false }
+  },
   readAt: { type: Date, default: null }
 }, { timestamps: true });
 

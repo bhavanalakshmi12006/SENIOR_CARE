@@ -22,6 +22,8 @@ import RecentlyAccessed from "../models/RecentlyAccessed.js";
 import AuditLog from "../models/AuditLog.js";
 import CareData from "../models/CareData.js";
 import ModuleRecord from "../models/ModuleRecord.js";
+import Review from "../models/Review.js";
+import Video from "../models/Video.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,9 +45,11 @@ async function seed() {
     { email: "staff.test@seniorcare.local", displayName: "Staff Murugan", firstName: "Murugan", lastName: "Pillai", role: "staff", phone: "+91 98765 00002", address: "T. Nagar, Chennai" },
     { email: "senior.test@seniorcare.local", displayName: "Lakshmi Devi", firstName: "Lakshmi", lastName: "Devi", role: "senior_citizen", phone: "+91 98765 43210", address: "Flat 104, Senior Haven, Adyar, Chennai" },
     { email: "family.test@seniorcare.local", displayName: "Priya Ramesh", firstName: "Priya", lastName: "Ramesh", role: "family_member", phone: "+91 98765 00003", address: "Velachery, Chennai" },
+    { email: "family2.test@seniorcare.local", displayName: "Vignesh Ramesh", firstName: "Vignesh", lastName: "Ramesh", role: "family_member", phone: "+91 98765 00006", address: "Adyar, Chennai" },
     { email: "caretaker.test@seniorcare.local", displayName: "Anitha Krishnan", firstName: "Anitha", lastName: "Krishnan", role: "caretaker", phone: "+91 98765 00004", address: "Mylapore, Chennai" },
     { email: "caregiver.test@seniorcare.local", displayName: "Anitha Krishnan", firstName: "Anitha", lastName: "Krishnan", role: "caretaker", phone: "+91 98765 00004", address: "Mylapore, Chennai" },
-    { email: "volunteer.test@seniorcare.local", displayName: "Karthik Raman", firstName: "Karthik", lastName: "Raman", role: "volunteer", phone: "+91 98765 00005", address: "Thiruvanmiyur, Chennai" }
+    { email: "volunteer.test@seniorcare.local", displayName: "Karthik Raman", firstName: "Karthik", lastName: "Raman", role: "volunteer", phone: "+91 98765 00005", address: "Thiruvanmiyur, Chennai" },
+    { email: "temp.caregiver@seniorcare.local", displayName: "Dinesh Kumar (Probation)", firstName: "Dinesh", lastName: "Kumar", role: "caretaker", phone: "+91 98765 00099", address: "Tambaram, Chennai" }
   ];
 
   const createdUsers = {};
@@ -58,6 +62,8 @@ async function seed() {
     createdUsers[u.role] = user;
     if (u.email.includes("senior")) createdUsers.seniorUser = user;
     if (u.email.includes("caretaker")) createdUsers.caretakerUser = user;
+    if (u.email.includes("family2")) createdUsers.family2_member = user;
+    if (u.email.includes("family.") || u.email === "family.test@seniorcare.local") createdUsers.family_member = user;
   }
   console.log("✓ Users seeded");
 
@@ -79,7 +85,7 @@ async function seed() {
       roomNumber: "Room 104",
       assignedCaregiverId: createdUsers.caretakerUser._id,
       assignedCaregiverName: "Anitha Krishnan",
-      familyMemberUserIds: [createdUsers.family_member._id],
+      familyMemberUserIds: [createdUsers.family_member._id, createdUsers.family2_member._id],
       safetyStatus: "safe",
       lastCheckinAt: new Date(),
       checkinStreak: 14,
@@ -595,7 +601,152 @@ async function seed() {
   ]);
   console.log("✓ Audit Logs seeded");
 
-  // 13. Generate sample_data.xlsx in project root
+  // 13. Seed Videos
+  await Video.deleteMany({});
+  await Video.insertMany([
+    {
+      title: "Gentle Morning Chair Yoga for Seniors",
+      category: "Yoga",
+      videoUrl: "https://www.youtube.com/watch?v=kFhG-ZzLNN4",
+      embedUrl: "https://www.youtube.com/embed/kFhG-ZzLNN4",
+      thumbnailUrl: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=500",
+      duration: "15 mins",
+      instructor: "Dr. Lakshmi Yoga Master",
+      description: "Safe, seated gentle stretching movements to awaken joints and boost morning energy.",
+      tags: ["Yoga", "Joints", "Morning Routine"],
+      addedByRole: "admin",
+      status: "active"
+    },
+    {
+      title: "Guided Deep Breathing & Mind Relaxation",
+      category: "Meditation",
+      videoUrl: "https://www.youtube.com/watch?v=inpok4MKVLM",
+      embedUrl: "https://www.youtube.com/embed/inpok4MKVLM",
+      thumbnailUrl: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=500",
+      duration: "10 mins",
+      instructor: "Guruji Ramanathan",
+      description: "Pranayama and mindful breathing exercises to reduce anxiety and regulate blood pressure.",
+      tags: ["Meditation", "Breathing", "Peace"],
+      addedByRole: "admin",
+      status: "active"
+    },
+    {
+      title: "Active Balance & Fall Prevention Exercises",
+      category: "Physiotherapy",
+      videoUrl: "https://www.youtube.com/watch?v=gC_L9qAHVJ8",
+      embedUrl: "https://www.youtube.com/embed/gC_L9qAHVJ8",
+      thumbnailUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=500",
+      duration: "18 mins",
+      instructor: "Physio Dr. Anand",
+      description: "Strengthen leg core muscles and improve stability to safely prevent accidental falls.",
+      tags: ["Balance", "Fall Prevention", "Mobility"],
+      addedByRole: "admin",
+      status: "active"
+    },
+    {
+      title: "Laughter Therapy & Emotional Upliftment",
+      category: "Recreation",
+      videoUrl: "https://www.youtube.com/watch?v=4pLUleLdwY4",
+      embedUrl: "https://www.youtube.com/embed/4pLUleLdwY4",
+      thumbnailUrl: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500",
+      duration: "12 mins",
+      instructor: "Sister Malathi",
+      description: "Hearty joyful laughter sessions that stimulate blood circulation and bring cheerful smiles.",
+      tags: ["Laughter", "Joy", "Heart Health"],
+      addedByRole: "admin",
+      status: "active"
+    }
+  ]);
+  console.log("✓ Videos seeded");
+
+  // 14. Seed Reviews & Ratings
+  await Review.deleteMany({});
+  const dineshUser = await User.findOne({ email: "temp.caregiver@seniorcare.local" });
+  await Review.insertMany([
+    {
+      targetType: "caregiver",
+      targetId: createdUsers.caretakerUser._id,
+      targetName: "Anitha Krishnan",
+      targetRole: "caregiver",
+      seniorId: primarySenior._id,
+      seniorName: primarySenior.name,
+      reviewerId: createdUsers.seniorUser._id,
+      reviewerName: createdUsers.seniorUser.displayName,
+      reviewerRole: "senior_citizen",
+      rating: 5,
+      feedback: "Sister Anitha is so caring and patient. She checks my blood pressure and medication on exact time every morning.",
+      tags: ["Punctual", "Compassionate", "Medical Care"],
+      isComplaint: false,
+      status: "active"
+    },
+    {
+      targetType: "caregiver",
+      targetId: createdUsers.caretakerUser._id,
+      targetName: "Anitha Krishnan",
+      targetRole: "caregiver",
+      seniorId: primarySenior._id,
+      seniorName: primarySenior.name,
+      reviewerId: createdUsers.family_member._id,
+      reviewerName: createdUsers.family_member.displayName,
+      reviewerRole: "family_member",
+      rating: 5,
+      feedback: "We live in another area and Anitha gives us complete peace of mind with timely daily updates and medication care.",
+      tags: ["Highly Reliable", "Kind & Patient", "Regular Updates"],
+      isComplaint: false,
+      status: "active"
+    },
+    {
+      targetType: "volunteer",
+      targetId: createdUsers.volunteer._id,
+      targetName: "Karthik Raman",
+      targetRole: "volunteer",
+      seniorId: primarySenior._id,
+      seniorName: primarySenior.name,
+      reviewerId: createdUsers.seniorUser._id,
+      reviewerName: createdUsers.seniorUser.displayName,
+      reviewerRole: "senior_citizen",
+      rating: 5,
+      feedback: "Karthik bought my blood pressure medicines from Apollo pharmacy and helped set up video call with my grandson.",
+      tags: ["Helpful", "Medicine Delivery", "Tech Friendly"],
+      isComplaint: false,
+      status: "active"
+    },
+    {
+      targetType: "volunteer",
+      targetId: createdUsers.volunteer._id,
+      targetName: "Karthik Raman",
+      targetRole: "volunteer",
+      seniorId: seniorDocs[1]._id,
+      seniorName: seniorDocs[1].name,
+      reviewerId: createdUsers.family_member._id,
+      reviewerName: createdUsers.family_member.displayName,
+      reviewerRole: "family_member",
+      rating: 4.8,
+      feedback: "Very enthusiastic volunteer who assists seniors with hospital rides and banking errands cheerfully.",
+      tags: ["Quick Response", "Courteous"],
+      isComplaint: false,
+      status: "active"
+    },
+    ...(dineshUser ? [{
+      targetType: "caregiver",
+      targetId: dineshUser._id,
+      targetName: "Dinesh Kumar (Probation)",
+      targetRole: "caregiver",
+      seniorId: seniorDocs[1]._id,
+      seniorName: seniorDocs[1].name,
+      reviewerId: createdUsers.family_member._id,
+      reviewerName: createdUsers.family_member.displayName,
+      reviewerRole: "family_member",
+      rating: 2,
+      feedback: "Arrived 45 minutes late for afternoon medication distribution and did not respond to phone calls.",
+      tags: ["Delayed Arrival", "Unresponsive"],
+      isComplaint: true,
+      status: "active"
+    }] : [])
+  ]);
+  console.log("✓ Reviews seeded");
+
+  // 15. Generate sample_data.xlsx in project root
   const wb = XLSX.utils.book_new();
 
   // Users sheet

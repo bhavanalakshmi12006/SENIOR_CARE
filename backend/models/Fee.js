@@ -7,7 +7,6 @@ const feeSchema = new mongoose.Schema({
   title: { type: String, required: true },
   category: { 
     type: String, 
-    enum: ["Monthly Care", "Medical Consultation", "Physiotherapy", "Special Care", "Meals", "Other"], 
     default: "Monthly Care" 
   },
   totalAmount: { type: Number, required: true },

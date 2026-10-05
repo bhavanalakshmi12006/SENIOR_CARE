@@ -18,6 +18,8 @@ import searchRoutes from "./routes/searchRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import chatbotRoutes from "./routes/chatbotRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import videoRoutes from "./routes/videoRoutes.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -85,6 +87,8 @@ app.use("/api/search", searchRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/videos", videoRoutes);
 
 // Central error handler
 app.use((err, req, res, next) => {

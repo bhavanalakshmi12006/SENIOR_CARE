@@ -44,6 +44,32 @@ router.patch("/:id", requireRole("admin"), async (req, res) => {
   }
 });
 
+// Remove/delete caregiver, volunteer, or user (Admin only)
+router.delete("/:id", requireRole("admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const name = user.displayName;
+    const role = user.role;
+    await User.findByIdAndDelete(id);
+
+    await AuditLog.create({
+      action: "USER_DELETED_BY_ADMIN",
+      performedBy: req.user._id,
+      performedByName: req.user.displayName,
+      performedByRole: req.user.role,
+      targetEntity: "User",
+      targetId: id,
+      details: `Admin removed ${role} '${name}' following review/complaints`
+    });
+
+    res.json({ message: `${role} '${name}' removed successfully.` });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to remove user", error: err.message });
+  }
+});
+
 // Get Audit Logs (Admin only)
 router.get("/audit/logs", requireRole("admin"), async (req, res) => {
   try {

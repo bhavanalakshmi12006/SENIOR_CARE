@@ -30,7 +30,16 @@ export async function getAssistanceRequests(req, res) {
 
 export async function createAssistanceRequest(req, res) {
   try {
-    let { seniorId, category, title, description = "", priority = "Normal" } = req.body;
+    let { 
+      seniorId, 
+      category = "General Assistance", 
+      title, 
+      description = "", 
+      priority = "Normal",
+      recipientPhone,
+      recipientEmail,
+      channels = ["whatsapp", "sms", "email"]
+    } = req.body;
 
     let senior;
     if (seniorId) {
@@ -41,26 +50,47 @@ export async function createAssistanceRequest(req, res) {
 
     if (!senior) return res.status(404).json({ message: "Senior not found" });
 
+    let cat = category;
+    if (category.toLowerCase().includes("emergency")) {
+      cat = "Emergency Assistance";
+    }
+
+    const isEmergency = cat === "Emergency Assistance" || (priority === "Urgent" && !description?.trim());
+
+    if (!isEmergency && (!description || !description.trim())) {
+      return res.status(400).json({ 
+        message: "Description details (e.g. hospital destination, schedule, or items needed) are required for non-emergency assistance." 
+      });
+    }
+
+    const requestTitle = title || (isEmergency ? `🚨 Emergency SOS Assistance: ${senior.name}` : `${cat} Request`);
+    const requestDesc = description?.trim() || (isEmergency ? "Immediate emergency assistance triggered — zero delay dispatch." : "Assistance requested.");
+
     const request = await AssistanceRequest.create({
       seniorId: senior._id,
       seniorName: senior.name,
-      category,
-      title,
-      description,
-      priority,
+      category: cat,
+      title: requestTitle,
+      description: requestDesc,
+      priority: isEmergency ? "Urgent" : priority,
       status: "Requested",
       requestedBy: req.user._id
     });
 
-    // Notify volunteers & caregivers
-    await Notification.create({
+    // Multi-channel notification dispatch
+    const { dispatchNotification } = await import("../services/notificationService.js");
+    await dispatchNotification({
+      recipientUserId: senior.userId || req.user._id,
       recipientRole: "volunteer",
       seniorId: senior._id,
       type: "assistance",
-      title: `🤝 New Assistance Request: ${category}`,
-      message: `${senior.name} needs help with: ${title}`,
-      priority: priority === "Urgent" ? "critical" : "high",
-      link: "/assistance"
+      title: `🤝 Assistance Request: ${cat}`,
+      message: `${senior.name} requested ${cat}: "${requestDesc}". Contact: ${recipientPhone || senior.emergencyContactPhone || senior.phone || "+91 98765 00003"}`,
+      priority: isEmergency ? "critical" : (priority === "Urgent" ? "critical" : "normal"),
+      link: "/assistance",
+      channels: Array.isArray(channels) && channels.length > 0 ? channels : ["whatsapp", "sms", "email"],
+      recipientPhone: recipientPhone || senior.emergencyContactPhone || senior.phone,
+      recipientEmail: recipientEmail || req.user.email
     });
 
     await AuditLog.create({

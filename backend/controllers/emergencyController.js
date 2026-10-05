@@ -2,6 +2,7 @@ import Emergency from "../models/Emergency.js";
 import Senior from "../models/Senior.js";
 import Notification from "../models/Notification.js";
 import AuditLog from "../models/AuditLog.js";
+import { dispatchNotification } from "../services/notificationService.js";
 
 export async function getEmergencies(req, res) {
   try {
@@ -69,46 +70,22 @@ export async function triggerEmergency(req, res) {
     senior.safetyStatus = "emergency";
     await senior.save();
 
-    // Broadcast notifications to relevant roles
-    const notificationDocs = [
-      {
-        recipientRole: "caretaker",
+    // Broadcast notifications to relevant roles via WhatsApp, SMS, Email, and In-App
+    const chosenChannels = req.body.channels || ["whatsapp", "sms", "email", "inApp"];
+    const rolesToNotify = ["caretaker", "staff", "admin", "family_member"];
+    for (const r of rolesToNotify) {
+      await dispatchNotification({
+        recipientRole: r,
         seniorId: senior._id,
         type: "emergency",
         title: `🚨 Emergency Alert: ${senior.name}`,
-        message: `EMG-${codeNum} active in ${emergency.location}. ${notes}`,
+        message: `EMG-${codeNum} active in ${emergency.location}. Immediate response required. ${notes}`,
         priority: "critical",
-        link: "/emergencies"
-      },
-      {
-        recipientRole: "staff",
-        seniorId: senior._id,
-        type: "emergency",
-        title: `🚨 Emergency Alert: ${senior.name}`,
-        message: `EMG-${codeNum} active in ${emergency.location}. Immediate response required.`,
-        priority: "critical",
-        link: "/emergencies"
-      },
-      {
-        recipientRole: "admin",
-        seniorId: senior._id,
-        type: "emergency",
-        title: `🚨 Emergency Alert: ${senior.name}`,
-        message: `EMG-${codeNum} active in ${emergency.location}.`,
-        priority: "critical",
-        link: "/emergencies"
-      },
-      {
-        recipientRole: "family_member",
-        seniorId: senior._id,
-        type: "emergency",
-        title: `🚨 Emergency Alert for ${senior.name}`,
-        message: `Emergency response active. Care team has been alerted. Location: ${emergency.location}`,
-        priority: "critical",
-        link: "/emergencies"
-      }
-    ];
-    await Notification.insertMany(notificationDocs);
+        link: "/emergency",
+        channels: chosenChannels,
+        recipientPhone: senior.emergencyContactPhone || senior.phone
+      });
+    }
 
     // Audit log
     await AuditLog.create({

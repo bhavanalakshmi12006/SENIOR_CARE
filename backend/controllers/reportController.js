@@ -17,24 +17,44 @@ export async function getReportData(req, res) {
     let rows = [];
     let summary = {};
 
-    // Role-specific scoping: Family members only see their 1 or 2 associated seniors
+    // Role-specific scoping: Seniors only see their own, Family members see their linked elders, Caregivers see assigned
     let seniorScopeFilter = {};
-    if (req.user?.role === "family_member") {
+    if (req.user?.role === "senior_citizen") {
+      const senior = await Senior.findOne({
+        $or: [
+          { userId: req.user._id },
+          { phone: req.user.phone || "---" }
+        ]
+      });
+      seniorScopeFilter = { _id: senior ? senior._id : null };
+    } else if (req.user?.role === "family_member") {
       let famSeniors = await Senior.find({
         $or: [
           { familyMemberUserIds: req.user._id },
           { emergencyContactPhone: req.user.phone || "---" }
         ]
-      }).limit(2);
+      });
 
       if (famSeniors.length === 0) {
         famSeniors = await Senior.find({ status: "active" }).limit(2);
         for (const s of famSeniors) {
-          s.familyMemberUserIds.push(req.user._id);
-          await s.save();
+          if (!s.familyMemberUserIds.some(uid => uid.toString() === req.user._id.toString())) {
+            s.familyMemberUserIds.push(req.user._id);
+            await s.save();
+          }
         }
       }
       seniorScopeFilter = { _id: { $in: famSeniors.map(s => s._id) } };
+    } else if (req.user?.role === "caretaker" || req.user?.role === "caregiver") {
+      const cSeniors = await Senior.find({
+        $or: [
+          { assignedCaregiverId: req.user._id },
+          { assignedCaregiverName: req.user.displayName }
+        ]
+      });
+      if (cSeniors.length > 0) {
+        seniorScopeFilter = { _id: { $in: cSeniors.map(s => s._id) } };
+      }
     }
 
     if (type === "health") {
@@ -150,16 +170,34 @@ export async function exportReportExcel(req, res) {
     const { type = "all" } = req.query;
     const wb = XLSX.utils.book_new();
 
-    // Role-specific scoping for family members
+    // Role-specific scoping: Seniors see own, Family see linked, Caregiver see assigned
     let seniorFilter = {};
-    if (req.user?.role === "family_member") {
+    if (req.user?.role === "senior_citizen") {
+      const senior = await Senior.findOne({
+        $or: [
+          { userId: req.user._id },
+          { phone: req.user.phone || "---" }
+        ]
+      });
+      seniorFilter = { _id: senior ? senior._id : null };
+    } else if (req.user?.role === "family_member") {
       let famSeniors = await Senior.find({
         $or: [
           { familyMemberUserIds: req.user._id },
           { emergencyContactPhone: req.user.phone || "---" }
         ]
-      }).limit(2);
+      });
       seniorFilter = { _id: { $in: famSeniors.map(s => s._id) } };
+    } else if (req.user?.role === "caretaker" || req.user?.role === "caregiver") {
+      const cSeniors = await Senior.find({
+        $or: [
+          { assignedCaregiverId: req.user._id },
+          { assignedCaregiverName: req.user.displayName }
+        ]
+      });
+      if (cSeniors.length > 0) {
+        seniorFilter = { _id: { $in: cSeniors.map(s => s._id) } };
+      }
     }
 
     if (type === "all" || type === "health") {

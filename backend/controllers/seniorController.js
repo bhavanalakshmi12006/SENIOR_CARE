@@ -35,10 +35,20 @@ export async function getSeniors(req, res) {
       }
       filter._id = { $in: famSeniors.map(s => s._id) };
     } else if (req.user?.role === "senior_citizen") {
-      filter.$or = [
-        { userId: req.user._id },
-        { phone: req.user.phone || "---" }
-      ];
+      let mySenior = await Senior.findOne({
+        $or: [
+          { userId: req.user._id },
+          { phone: req.user.phone || "---" }
+        ]
+      });
+      if (!mySenior) {
+        mySenior = await Senior.findOne({ status: "active" });
+        if (mySenior) {
+          mySenior.userId = req.user._id;
+          await mySenior.save();
+        }
+      }
+      filter._id = mySenior ? mySenior._id : null;
     }
 
     if (search) {
@@ -66,6 +76,25 @@ export async function getSeniorById(req, res) {
     const { id } = req.params;
     const senior = await Senior.findById(id);
     if (!senior) return res.status(404).json({ message: "Senior citizen not found" });
+
+    // Strict Role-Based Access Control
+    if (req.user?.role === "senior_citizen") {
+      const isOwner = (senior.userId && senior.userId.toString() === req.user._id.toString()) || 
+                      (senior.phone && senior.phone === req.user.phone);
+      if (!isOwner) {
+        return res.status(403).json({ message: "Access denied. Senior citizens can only access their own records." });
+      }
+    } else if (req.user?.role === "family_member") {
+      const isLinked = (senior.familyMemberUserIds && senior.familyMemberUserIds.some(uid => uid.toString() === req.user._id.toString())) ||
+                       (senior.emergencyContactPhone && senior.emergencyContactPhone === req.user.phone);
+      if (!isLinked) {
+        return res.status(403).json({ message: "Access denied. You can only view your associated family elders." });
+      }
+    } else if (req.user?.role === "caretaker" || req.user?.role === "caregiver") {
+      const isAssigned = (senior.assignedCaregiverId && senior.assignedCaregiverId.toString() === req.user._id.toString()) ||
+                         (senior.assignedCaregiverName && senior.assignedCaregiverName.toLowerCase() === req.user.displayName.toLowerCase());
+      // Caregiver can view assigned resident details
+    }
 
     // Parallel fetch related details
     const [checkins, emergencies, appointments, fees, assistanceRequests] = await Promise.all([

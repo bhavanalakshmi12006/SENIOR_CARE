@@ -24,7 +24,18 @@ export async function getAppointments(req, res) {
 
 export async function createAppointment(req, res) {
   try {
-    let { seniorId, doctorName, department = "General Medicine", hospital = "City Care Hospital", appointmentDate, timeSlot = "10:00 AM", notes = "" } = req.body;
+    let { 
+      seniorId, 
+      doctorName, 
+      department = "General Medicine", 
+      hospital = "City Care Hospital", 
+      appointmentDate, 
+      timeSlot = "10:00 AM", 
+      notes = "",
+      recipientPhone,
+      recipientEmail,
+      channels = ["whatsapp", "sms", "email"]
+    } = req.body;
 
     let senior;
     if (seniorId) {
@@ -51,15 +62,20 @@ export async function createAppointment(req, res) {
       status: "Upcoming"
     });
 
-    // Notify senior and family
-    await Notification.create({
+    // Multi-channel notification dispatch
+    const { dispatchNotification } = await import("../services/notificationService.js");
+    await dispatchNotification({
       recipientUserId: senior.userId || req.user._id,
       recipientRole: "senior_citizen",
+      seniorId: senior._id,
       type: "appointment",
       title: `📅 Appointment Scheduled: ${doctorName}`,
-      message: `Your appointment is on ${new Date(appointmentDate).toLocaleDateString()} at ${timeSlot} (${hospital}).`,
+      message: `Your appointment is on ${new Date(appointmentDate).toLocaleDateString()} at ${timeSlot} (${hospital} - ${department}). Contact: ${recipientPhone || senior.emergencyContactPhone || senior.phone || "+91 98765 00003"}`,
       priority: "high",
-      link: "/appointments"
+      link: "/appointments",
+      channels: Array.isArray(channels) && channels.length > 0 ? channels : ["whatsapp", "sms", "email"],
+      recipientPhone: recipientPhone || senior.emergencyContactPhone || senior.phone,
+      recipientEmail: recipientEmail || req.user.email
     });
 
     await AuditLog.create({

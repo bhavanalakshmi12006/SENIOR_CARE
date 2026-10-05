@@ -5,12 +5,17 @@ const assistanceRequestSchema = new mongoose.Schema({
   seniorName: { type: String, required: true },
   category: { 
     type: String, 
-    enum: ["Food Assistance", "Medicine Pickup", "Shopping", "Travel Assistance", "Home Assistance", "Other"], 
-    required: true 
+    required: true,
+    default: "General Assistance"
   },
   title: { type: String, required: true },
   description: { type: String, default: "" },
-  priority: { type: String, enum: ["Normal", "High", "Urgent"], default: "Normal" },
+  priority: { 
+    type: String, 
+    enum: ["Normal", "High", "Urgent"], 
+    set: (v) => v ? (v.charAt(0).toUpperCase() + v.slice(1).toLowerCase()) : "Normal",
+    default: "Normal" 
+  },
   status: { 
     type: String, 
     enum: ["Requested", "Assigned", "Accepted", "In Progress", "Completed"], 

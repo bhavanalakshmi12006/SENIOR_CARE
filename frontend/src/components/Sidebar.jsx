@@ -2,7 +2,8 @@ import React from "react";
 import { 
   LayoutDashboard, Users, ShieldCheck, AlertCircle, Calendar, 
   HandHeart, CreditCard, FileSpreadsheet, History, Settings, 
-  UserCog, LogOut, ChevronLeft, ChevronRight, ShieldAlert 
+  UserCog, LogOut, ChevronLeft, ChevronRight, ShieldAlert,
+  Award, Film
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
@@ -22,13 +23,15 @@ export default function Sidebar({
   // Role-based visibility
   const navItems = [
     { id: "dashboard", label: t.dashboard, icon: LayoutDashboard, roles: ["admin", "staff", "senior_citizen", "family_member", "caretaker", "caregiver", "volunteer"] },
-    { id: "seniors", label: t.seniors, icon: Users, roles: ["admin", "staff", "family_member", "caretaker", "caregiver"] },
-    { id: "safety", label: t.safety, icon: ShieldCheck, roles: ["admin", "staff", "senior_citizen", "family_member", "caretaker", "caregiver", "volunteer"] },
-    { id: "emergency", label: t.emergency, icon: AlertCircle, roles: ["admin", "staff", "senior_citizen", "family_member", "caretaker", "caregiver", "volunteer"], badge: activeEmergencyAlert ? "!" : null },
+    { id: "seniors", label: role === "family_member" ? (t.seniors || "Family Elders") : t.seniors, icon: Users, roles: ["admin", "staff", "family_member", "caretaker", "caregiver"] },
+    { id: "safety", label: t.safety, icon: ShieldCheck, roles: ["staff", "senior_citizen", "family_member", "caretaker", "caregiver", "volunteer"] },
+    { id: "emergency", label: role === "admin" ? (t.emergency || "Emergency Incidents") : t.emergency, icon: AlertCircle, roles: ["admin", "staff", "senior_citizen", "family_member", "caretaker", "caregiver", "volunteer"], badge: activeEmergencyAlert ? "!" : null },
     { id: "appointments", label: t.appointments, icon: Calendar, roles: ["admin", "staff", "senior_citizen", "family_member", "caretaker", "caregiver"] },
     { id: "assistance", label: t.assistance, icon: HandHeart, roles: ["admin", "staff", "senior_citizen", "family_member", "caretaker", "caregiver", "volunteer"] },
-    { id: "fees", label: t.fees, icon: CreditCard, roles: ["admin", "staff", "senior_citizen", "family_member"] },
-    { id: "reports", label: t.reports, icon: FileSpreadsheet, roles: ["admin", "staff"] },
+    { id: "fees", label: t.careReceipts || "Care Receipts", icon: CreditCard, roles: ["admin", "staff", "senior_citizen", "family_member"] },
+    { id: "reviews", label: t.reviewsRatings || "Reviews & Care Team", icon: Award, roles: ["admin", "staff", "senior_citizen", "family_member", "caretaker", "caregiver", "volunteer"] },
+    { id: "videos", label: role === "admin" ? (t.videoManagement || "Video Management") : (t.wellnessVideos || "Care Videos"), icon: Film, roles: ["admin", "staff", "senior_citizen", "family_member"] },
+    { id: "reports", label: t.reports, icon: FileSpreadsheet, roles: ["admin", "staff", "family_member"] },
     { id: "recentlyAccessed", label: t.recentlyAccessed, icon: History, roles: ["admin", "staff", "family_member", "caretaker", "caregiver"] },
     { id: "usersManagement", label: t.usersManagement, icon: UserCog, roles: ["admin"] },
     { id: "settings", label: t.settings, icon: Settings, roles: ["admin", "staff", "senior_citizen", "family_member", "caretaker", "caregiver", "volunteer"] }

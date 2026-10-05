@@ -21,6 +21,8 @@ import ReportsView from "./views/ReportsView";
 import RecentlyAccessedView from "./views/RecentlyAccessedView";
 import SettingsView from "./views/SettingsView";
 import UsersView from "./views/UsersView";
+import ReviewsView from "./views/ReviewsView";
+import VideosManagementView from "./views/VideosManagementView";
 
 import EmergencyModal from "./components/Modals/EmergencyModal";
 import CheckinModal from "./components/Modals/CheckinModal";
@@ -140,6 +142,10 @@ function MainAppShell() {
               onOpenPaymentModal={(fee) => setPaymentModalFee(fee)}
             />
           )}
+
+          {currentTab === "reviews" && <ReviewsView />}
+
+          {currentTab === "videos" && <VideosManagementView />}
 
           {currentTab === "reports" && <ReportsView />}
 

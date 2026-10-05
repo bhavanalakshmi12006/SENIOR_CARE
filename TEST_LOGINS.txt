@@ -30,15 +30,24 @@ Password: SeniorCare@2026!
 Features: Large accessible UI, "✓ I AM SAFE" check-in button, "🚨 EMERGENCY" quick trigger, My Caregiver card with direct call, My Appointments, My Fees, My Family.
 
 ------------------------------------------------------------------------
-4. Family Member
+------------------------------------------------------------------------
+4. Family Member 1 (Daughter: Priya Ramesh)
 ------------------------------------------------------------------------
 Role: family_member
 Email: family.test@seniorcare.local
 Password: SeniorCare@2026!
-Features: Linked senior resident status, real-time safety streak, live emergency alerts, primary caregiver phone, pending care fees payment.
+Features: Linked to Senior Citizen (Lakshmi Devi), real-time safety status, live emergency alerts, call caregiver, order lab tests/hospital services.
 
 ------------------------------------------------------------------------
-5. Primary Caregiver / Caretaker
+5. Family Member 2 (Son: Vignesh Ramesh - Second Child)
+------------------------------------------------------------------------
+Role: family_member
+Email: family2.test@seniorcare.local
+Password: SeniorCare@2026!
+Features: Demonstrates multi-child family access! Also linked to Senior Citizen (Lakshmi Devi). Can switch between family elders, monitor wellness, and order healthcare services.
+
+------------------------------------------------------------------------
+6. Primary Caregiver / Caretaker
 ------------------------------------------------------------------------
 Role: caretaker / caregiver
 Email: caretaker.test@seniorcare.local
@@ -46,12 +55,15 @@ Password: SeniorCare@2026!
 Features: Assigned seniors monitoring, missed check-ins queue, active emergency response panel (Acknowledge, Escalate, Resolve), care notes.
 
 ------------------------------------------------------------------------
-6. Care Volunteer
+7. Care Volunteer
 ------------------------------------------------------------------------
 Role: volunteer
 Email: volunteer.test@seniorcare.local
 Password: SeniorCare@2026!
 Features: Available assistance requests board (Medicine Pickup, Food Delivery, Grocery Shopping, Hospital Escort), Accept Task, Mark Completed.
 
-* TIP: On the login page, you can also click the quick demo buttons to log in with 1 click!
+========================================================================
+  HOW TO LOGIN FOR YOUR PRESENTATION:
+  Enter the Email and Password above into the Sign In form.
+  You can also use "Continue with Google" for any role!
 ========================================================================
